@@ -1,0 +1,179 @@
+#!/usr/bin/env python3
+
+
+# [https://graphviz.readthedocs.io]
+# [https://graphviz.org/documentation/]
+
+import os
+import hashlib
+import tempfile
+from graphviz import Digraph
+
+
+# ----------------------------------------------------------------------
+SOURCES = ['.py']
+CONFIGS = ['.ini', '.yml']
+DOCS = ['.rst']
+
+# - - - - - - - - - - - - - - - - - -
+NODECOLORS = {
+    'folder-fill': '#ffe79c',
+    'folder-color': '#919191',
+
+    'hidden-font': '#b8b8b8',
+    'hidden-color': '#b8b8b8',
+
+    'sources-fill': '#4381b3',
+    'sources-font': '#ffd343',
+    'sources-color': '#ffffff',
+
+    'configs-fill': '#e1e1e1',
+    'configs-color': '#919191',
+
+    'docs-fill': '#f6f6f6',
+    'docs-font': '#e96028',
+    'docs-color': '#eaa61d'
+}
+
+EDGECOLORS = {
+    'default-color': '#919191',
+    'folder-color': '#000000',
+    'hidden-color': '#b8b8b8'
+}
+# ----------------------------------------------------------------------
+
+
+def md5sum4(inputstr):
+    m = hashlib.md5()
+    m.update(inputstr.encode('utf-8'))
+    return m.hexdigest()[0:4]
+
+
+def make_relpath(reldirname, basename):
+    r = os.path.join(reldirname, basename)
+    # return r
+    return r[2:] if r.startswith(f'.{os.path.sep}') else r
+
+
+class AttrsModelFactory:
+    def __init__(self):
+        self.attrs_model = {}
+
+    def add(self, ak, av):
+        self.attrs_model[ak] = av
+        return self
+
+    def build(self):
+        return self.attrs_model
+
+
+def get_node_attrs(isfolder, basename):
+    f = AttrsModelFactory()
+    if isfolder:  # paint folders
+        f.add('fillcolor', NODECOLORS['folder-fill'])
+        f.add('style', 'filled')
+        f.add('shape', 'folder')
+        f.add('color', NODECOLORS['folder-color'])
+    if basename.startswith('.'):  # paint hidden
+        f.add('fontcolor', NODECOLORS['hidden-font'])
+        f.add('color', NODECOLORS['hidden-color'])
+    ext = os.path.splitext(basename)[1].lower()
+    if ext in SOURCES:  # paint sources
+        f.add('fillcolor', NODECOLORS['sources-fill'])
+        f.add('style', 'filled,rounded')
+        f.add('fontcolor', NODECOLORS['sources-font'])
+        f.add('color', NODECOLORS['sources-color'])
+        f.add('shape', 'box')
+    if ext in CONFIGS:  # paint configs
+        f.add('fillcolor', NODECOLORS['configs-fill'])
+        f.add('style', 'filled')
+        f.add('shape', 'note')
+        f.add('color', NODECOLORS['configs-color'])
+    if ext in DOCS:  # paint docs
+        f.add('fillcolor', NODECOLORS['docs-fill'])
+        f.add('fontcolor', NODECOLORS['docs-font'])
+        f.add('style', 'filled')
+        f.add('color', NODECOLORS['docs-color'])
+        f.add('shape', 'note')
+    return f.build()
+
+
+def get_edge_attrs(isfolder, basename):
+    f = AttrsModelFactory()
+    f.add('color', EDGECOLORS['default-color'])
+    if isfolder:  # paint folders
+        f.add('color', EDGECOLORS['folder-color'])
+    if basename.startswith('.'):  # paint hidden
+        f.add('color', EDGECOLORS['hidden-color'])
+        f.add('style', 'dotted')
+        f.add('arrowhead', 'empty')
+    return f.build()
+
+
+class Node:
+    def __init__(self, basename, reldirname, dot):
+        self.basename = basename
+        self.reldirname = reldirname
+        self.relpath = make_relpath(self.reldirname, self.basename)
+        print(f'visiting node: {self.relpath} ')
+        self.folder = os.path.isdir(self.relpath)
+        self.dot = dot
+        self.dotnodename = md5sum4(self.relpath)
+        nodeattrs = get_node_attrs(self.folder, self.basename)
+        self.dot.node(self.dotnodename, self.basename, **nodeattrs)
+        self.nodes = self.listloc(self.relpath)
+        for subnode in self.nodes:
+            edgeattrs = get_edge_attrs(subnode.folder, subnode.basename)
+            self.dot.edge(self.dotnodename, subnode.dotnodename, constraint='true', **edgeattrs)
+
+    def listloc(self, selfrelpath):  # TODO
+        if not self.folder:
+            return []
+        else:
+            newreldirname = selfrelpath
+            listdir = os.listdir(newreldirname)
+            nodes = []
+            for item in listdir:
+                nodes.append(Node(item, newreldirname, self.dot))
+            return nodes
+
+    def __str__(self):
+        printnodes = os.linesep.join([f'   {n}' for n in self.nodes]) if self.nodes else '-'
+        head = ' ; '.join([f'relpath="{self.relpath}"',
+                           f'basename="{self.basename}"',
+                           f'reldirname="{self.reldirname}"',
+                           f'folder={self.folder}'])
+        return os.linesep.join([head,
+                                f'nodes:',
+                                printnodes])
+
+
+###################################################################################################
+
+def main():
+
+    basename = os.path.basename(os.getcwd())
+    reldirname = os.path.dirname(os.getcwd())
+
+    dot = Digraph(comment=f'{basename} folder tree')
+
+    n = Node(basename=basename, reldirname=reldirname, dot=dot)
+
+    # print(n)
+    # print(dot.source)
+
+    output_directory = tempfile.gettempdir()
+    output_filename = f'tree__{basename}'
+    output_format = 'png'
+
+    dot.render(directory=output_directory,
+               filename=output_filename,
+               view=True,
+               cleanup=True,
+               format=output_format)
+
+    print(f'Output: {os.path.join(output_directory, ".".join([output_filename, output_format]))}')
+
+
+if __name__ == '__main__':
+    main()
