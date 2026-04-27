@@ -70,4 +70,4 @@ corresponding palette entries, and add a branch in `get_node_attrs`.
 
 ## License
 
-GPLv3 — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
