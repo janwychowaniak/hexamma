@@ -58,14 +58,27 @@ default viewer.
 
 ## Customizing the styling
 
-File categorization and colors live as module-level constants at the top of
-`src/hexamma/cli.py`:
+File categorization and colors live in `src/hexamma/styling.py`:
 
-- `SOURCES`, `CONFIGS`, `DOCS` — extension lists that drive categorization
-- `NODECOLORS`, `EDGECOLORS` — palettes for node and edge attributes
+- `Category` — enum of styling categories (`FOLDER`, `HIDDEN`, `SOURCE`,
+  `CONFIG`, `DOC`)
+- `SOURCE_EXTS`, `CONFIG_EXTS`, `DOC_EXTS` — extension sets that drive
+  categorization
+- `NODE_PALETTE`, `EDGE_PALETTE` — per-category attribute layers, applied in
+  the order defined by the module-level layer constants (later layers
+  overwrite earlier ones on attr-key collisions)
 
-To add a new category, extend one of the extension lists, add the
-corresponding palette entries, and add a branch in `get_node_attrs`.
+To add a new category, add a `Category` member, add an extension set and a
+palette entry, and update `categorize` plus the layer-order tuples.
+
+## Development
+
+Install with the test extras and run the suite:
+
+```bash
+pip install -e ".[dev]"
+pytest
+```
 
 ## License
 

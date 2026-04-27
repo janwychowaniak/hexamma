@@ -21,6 +21,11 @@ dependencies = [
     "graphviz",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
 [project.urls]
 Homepage = "https://github.com/janwychowaniak/hexamma"
 
@@ -29,3 +34,6 @@ hexamma = "hexamma.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

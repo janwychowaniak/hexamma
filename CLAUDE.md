@@ -26,21 +26,30 @@ cd /path/to/target && hexamma
 
 Output is rendered as PNG to the system temp dir as `tree__<basename>.png` and opened with the default viewer (`view=True` in `dot.render`).
 
-There is no test suite or lint config yet.
+Tests:
+
+```
+pip install -e ".[dev]"
+pytest
+```
+
+There is no lint config yet.
 
 ## Architecture
 
 Layout is a `src/`-style package:
 
-- `src/hexamma/cli.py` — all current logic (constants, helpers, `Node`, `main`)
+- `src/hexamma/cli.py` — filesystem walk + Graphviz rendering (`Node`, `main`, the `md5sum4` / `make_relpath` helpers)
+- `src/hexamma/styling.py` — pure: `Category` enum, palette tables, `categorize` / `node_attrs` / `edge_attrs`
 - `src/hexamma/__main__.py` — module entry point
 - `src/hexamma/__init__.py` — empty
-- `pyproject.toml` — PEP 621 metadata, setuptools backend, `hexamma = "hexamma.cli:main"` entry point
+- `pyproject.toml` — PEP 621 metadata, setuptools backend, `hexamma = "hexamma.cli:main"` entry point, `[dev]` extras with `pytest`
+- `tests/test_styling.py` — covers categorize + attr-layering semantics
 
-The package is built by setuptools with `[tool.setuptools.packages.find] where = ["src"]`. There is no separation between traversal, styling, and rendering yet — that's planned.
+The package is built by setuptools with `[tool.setuptools.packages.find] where = ["src"]`. Traversal and rendering are still entangled in `Node` — that's planned for the next step.
 
 Two things to know to make non-trivial changes:
 
 1. **Recursive node construction with side effects.** `Node.__init__` walks the filesystem and, as it constructs each child `Node`, also mutates the shared `graphviz.Digraph` passed in via `dot`. Edges from parent to child are added *after* the child is constructed (so children render their own subtree first). Node identity in the Digraph is `md5sum4(relpath)` — a 4-char MD5 prefix of the relative path — so two paths that collide on those 4 hex chars would clash. There is no cycle/symlink protection.
 
-2. **Styling is extension-driven.** `get_node_attrs` / `get_edge_attrs` consult the module-level `SOURCES`, `CONFIGS`, `DOCS` extension lists and the `NODECOLORS` / `EDGECOLORS` palettes. Adding a new file category means extending both an extension list and the palette dicts, then adding a branch in `get_node_attrs`. Folders and dotfiles get their own branches and stack with extension-based styling (last-write-wins on conflicting attrs).
+2. **Styling is layered, last-write-wins.** `categorize(is_folder, basename)` returns a `frozenset[Category]`. `node_attrs` / `edge_attrs` apply per-category palette layers in a fixed order (`_NODE_LAYER_ORDER` / `_EDGE_LAYER_ORDER` in `styling.py`); later layers overwrite earlier ones on attr-key collisions. Adding a category means: add a `Category` member, an extension set, a `NODE_PALETTE` / `EDGE_PALETTE` entry, a clause in `categorize`, and the appropriate position in the layer-order tuples.
