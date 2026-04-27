@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hexamma"
+version = "0.0.1"
+description = "Simple folder structure graph generator"
+readme = "README.md"
+requires-python = ">=3.6"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Jan Wychowaniak", email = "43786923+janwychowaniak@users.noreply.github.com" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "graphviz",
+]
+
+[project.urls]
+Homepage = "https://github.com/janwychowaniak/hexamma"
+
+[project.scripts]
+hexamma = "hexamma.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

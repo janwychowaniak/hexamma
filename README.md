@@ -39,11 +39,10 @@ brew install graphviz
 ## Install
 
 ```bash
-pip install -r requirements.txt
 pip install -e .
 ```
 
-The second step puts the `hexamma` script onto your `PATH`.
+This puts the `hexamma` script onto your `PATH`.
 
 ## Usage
 
@@ -60,7 +59,7 @@ default viewer.
 ## Customizing the styling
 
 File categorization and colors live as module-level constants at the top of
-the `hexamma` script:
+`src/hexamma/cli.py`:
 
 - `SOURCES`, `CONFIGS`, `DOCS` — extension lists that drive categorization
 - `NODECOLORS`, `EDGECOLORS` — palettes for node and edge attributes

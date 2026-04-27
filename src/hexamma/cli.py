@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-
-
 # [https://graphviz.readthedocs.io]
 # [https://graphviz.org/documentation/]
 
@@ -173,7 +170,3 @@ def main():
                format=output_format)
 
     print(f'Output: {os.path.join(output_directory, ".".join([output_filename, output_format]))}')
-
-
-if __name__ == '__main__':
-    main()

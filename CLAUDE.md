@@ -4,30 +4,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-`hexamma` is a single-file Python 3 script that generates a Graphviz diagram of the current working directory's folder structure. It is intended to be run from the directory you want to visualize — `main()` calls `os.getcwd()` directly, there are no CLI arguments.
+`hexamma` is a small Python 3 CLI that generates a Graphviz diagram of the current working directory's folder structure. It is intended to be run from the directory you want to visualize — `main()` calls `os.getcwd()` directly, there are no CLI arguments yet.
 
 ## Commands
 
-Install dependencies (requires the system `graphviz` binary in addition to the Python package):
+Install (requires the system `graphviz` binary in addition to the Python package):
 
 ```
-pip install -r requirements.txt   # installs the `graphviz` Python package
-pip install -e .                  # optional: installs the `hexamma` script via setup.py
+pip install -e .
 ```
+
+This puts the `hexamma` script onto `PATH` via the `[project.scripts]` entry point in `pyproject.toml`.
 
 Run against a target directory by `cd`-ing into it and invoking the script:
 
 ```
-cd /path/to/target && /path/to/hexamma
+cd /path/to/target && hexamma
 ```
+
+`python -m hexamma` works too (uses `src/hexamma/__main__.py`).
 
 Output is rendered as PNG to the system temp dir as `tree__<basename>.png` and opened with the default viewer (`view=True` in `dot.render`).
 
-There is no test suite, lint config, or build step.
+There is no test suite or lint config yet.
 
 ## Architecture
 
-The whole program is the `hexamma` file (a Python script with no `.py` extension; `setup.py` ships it via `scripts=['hexamma']`, and `find_packages()` finds nothing — there is no importable package).
+Layout is a `src/`-style package:
+
+- `src/hexamma/cli.py` — all current logic (constants, helpers, `Node`, `main`)
+- `src/hexamma/__main__.py` — module entry point
+- `src/hexamma/__init__.py` — empty
+- `pyproject.toml` — PEP 621 metadata, setuptools backend, `hexamma = "hexamma.cli:main"` entry point
+
+The package is built by setuptools with `[tool.setuptools.packages.find] where = ["src"]`. There is no separation between traversal, styling, and rendering yet — that's planned.
 
 Two things to know to make non-trivial changes:
 
