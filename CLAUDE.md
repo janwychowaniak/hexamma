@@ -41,12 +41,14 @@ Layout is a `src/`-style package:
 
 - `src/hexamma/cli.py` — filesystem walk + Graphviz rendering (`Node`, `main`, the `md5sum4` / `make_relpath` helpers)
 - `src/hexamma/styling.py` — pure: `Category` enum, palette tables, `categorize` / `node_attrs` / `edge_attrs`
+- `src/hexamma/tree.py` — pure: `FsNode` NamedTuple + `walk(path)` returning a deterministic tree (children sorted alphabetically). Not yet wired into `cli.py` -- the existing `Node` class still drives traversal; the rewire happens when the rendering layer is carved out.
 - `src/hexamma/__main__.py` — module entry point
 - `src/hexamma/__init__.py` — empty
 - `pyproject.toml` — PEP 621 metadata, setuptools backend, `hexamma = "hexamma.cli:main"` entry point, `[dev]` extras with `pytest`
 - `tests/test_styling.py` — covers categorize + attr-layering semantics
+- `tests/test_tree.py` — covers `walk()` against `tmp_path` fixtures (sort order, relpath construction, file/dir mix)
 
-The package is built by setuptools with `[tool.setuptools.packages.find] where = ["src"]`. Traversal and rendering are still entangled in `Node` — that's planned for the next step.
+The package is built by setuptools with `[tool.setuptools.packages.find] where = ["src"]`. Traversal and rendering are still entangled inside `Node` in `cli.py`; the new `tree.py` is in place but unused, and the rendering layer (the next step) will consume `tree.walk()` and replace `Node`.
 
 Two things to know to make non-trivial changes:
 
