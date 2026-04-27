@@ -46,15 +46,40 @@ This puts the `hexamma` script onto your `PATH`.
 
 ## Usage
 
-There are no arguments. `cd` into the directory you want to visualize and run:
+By default `hexamma` renders the current directory:
 
 ```bash
-cd /path/to/project
 hexamma
 ```
 
-The output PNG path is printed on stdout and the image opens in the system
-default viewer.
+It accepts a path and a few flags:
+
+```bash
+hexamma path/to/project                   # render a specific directory
+hexamma -d 3                              # cap depth at 3 levels
+hexamma -e '*.log' -e build               # add exclude patterns
+hexamma --no-default-excludes             # show .git/, __pycache__, etc.
+hexamma -f svg -o ~/diagrams/proj         # write SVG to a chosen path
+hexamma --no-view                         # don't open the viewer
+hexamma -L                                # follow directory symlinks
+```
+
+The full flag list is `hexamma --help`. Output path is printed on stdout.
+
+### Default excludes
+
+To keep diagrams readable, the following basenames are excluded by default
+(matched as `fnmatch` globs):
+
+```
+.git  .hg  .svn
+__pycache__  *.egg-info  .pytest_cache  .mypy_cache  .ruff_cache  .tox
+.venv  venv
+node_modules
+```
+
+Pass `--no-default-excludes` to disable, or add your own with `-e PATTERN`
+(repeatable).
 
 ## Customizing the styling
 

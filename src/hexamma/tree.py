@@ -4,12 +4,13 @@ No graphviz dependency. Children are sorted alphabetically by basename so
 the resulting tree is deterministic (the rendered diagram is reproducible
 for the same input).
 
-Symlink-to-directory entries are followed (via ``os.path.isdir``); a cycle
-through symlinks will raise ``RecursionError``. That is intentional for
-this step -- safe symlink handling is wired in once the CLI grows
-``--follow-symlinks``.
+``walk()`` supports basename-based exclude patterns (``fnmatch`` globs),
+a ``max_depth`` cap, and an optional ``follow_symlinks`` mode with cycle
+protection via realpath tracking. By default symlinks to directories are
+treated as leaves, matching the convention of ``find`` / ``tree`` / ``du``.
 """
 
+import fnmatch
 import os
 from typing import NamedTuple, Tuple
 
@@ -21,34 +22,83 @@ class FsNode(NamedTuple):
     children: Tuple['FsNode', ...]
 
 
-def walk(path):
+def walk(path, excludes=(), max_depth=None, follow_symlinks=False):
     """Return an FsNode tree rooted at ``path``.
 
-    The root node has ``relpath == ''``; descendants carry a forward-slash
-    (or os.sep) relative path from the root.
+    The root node has ``relpath == ''``; descendants carry an os.sep
+    relative path from the root.
+
+    ``excludes``: iterable of fnmatch patterns. Any directory entry whose
+    basename matches at least one pattern is omitted (the root itself is
+    never excluded).
+
+    ``max_depth``: cap on tree depth (root is depth 0). ``None`` means
+    unlimited.
+
+    ``follow_symlinks``: when ``False`` (the default) symlinks to
+    directories are treated as leaves. When ``True``, they are followed,
+    but cycles are broken: if a real directory is reached twice via
+    symlinks, the second visit is rendered as a leaf.
     """
     abs_path = os.path.abspath(path)
-    root_basename = os.path.basename(abs_path) or abs_path
-    return _build_node(abs_path, root_basename, '')
+    return _build_node(
+        abs_path=abs_path,
+        basename=os.path.basename(abs_path) or abs_path,
+        relpath='',
+        depth=0,
+        max_depth=max_depth,
+        excludes=tuple(excludes),
+        follow_symlinks=follow_symlinks,
+        visited=set(),
+    )
 
 
-def _build_node(abs_path, basename, relpath):
+def _build_node(abs_path, basename, relpath, depth, max_depth, excludes, follow_symlinks, visited):
     is_dir = os.path.isdir(abs_path)
-    if is_dir:
-        entries = sorted(os.listdir(abs_path))
-        children = tuple(
-            _build_node(
-                os.path.join(abs_path, entry),
-                entry,
-                os.path.join(relpath, entry) if relpath else entry,
-            )
-            for entry in entries
-        )
-    else:
-        children = ()
-    return FsNode(
-        basename=basename,
+    children = _children(
+        abs_path=abs_path,
         relpath=relpath,
         is_dir=is_dir,
-        children=children,
+        depth=depth,
+        max_depth=max_depth,
+        excludes=excludes,
+        follow_symlinks=follow_symlinks,
+        visited=visited,
     )
+    return FsNode(basename=basename, relpath=relpath, is_dir=is_dir, children=children)
+
+
+def _children(abs_path, relpath, is_dir, depth, max_depth, excludes, follow_symlinks, visited):
+    if not is_dir:
+        return ()
+    if not follow_symlinks and os.path.islink(abs_path):
+        return ()
+    if max_depth is not None and depth >= max_depth:
+        return ()
+
+    real = os.path.realpath(abs_path)
+    if real in visited:
+        return ()
+    visited.add(real)
+
+    entries = sorted(
+        entry for entry in os.listdir(abs_path)
+        if not _is_excluded(entry, excludes)
+    )
+    return tuple(
+        _build_node(
+            abs_path=os.path.join(abs_path, entry),
+            basename=entry,
+            relpath=os.path.join(relpath, entry) if relpath else entry,
+            depth=depth + 1,
+            max_depth=max_depth,
+            excludes=excludes,
+            follow_symlinks=follow_symlinks,
+            visited=visited,
+        )
+        for entry in entries
+    )
+
+
+def _is_excluded(basename, excludes):
+    return any(fnmatch.fnmatch(basename, pattern) for pattern in excludes)
