@@ -20,7 +20,7 @@ The rendered file is written to the system temp directory as
 
 ## Requirements
 
-- Python 3.6+
+- Python 3.10+
 - The Graphviz system binary (`dot` must be on `PATH`)
 - The `graphviz` Python package
 
