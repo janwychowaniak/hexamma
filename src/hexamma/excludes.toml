@@ -19,6 +19,11 @@ patterns = [
     "*.egg-info",
     # JavaScript / Node
     "node_modules",
+    ".next",
+    ".nuxt",
+    ".svelte-kit",
+    ".astro",
+    ".turbo",
     # Scala / sbt
     "target",
     ".bsp",
