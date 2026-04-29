@@ -47,7 +47,8 @@ There is no lint config yet.
 
 Layout is a `src/`-style package:
 
-- `src/hexamma/cli.py` — argparse + orchestration: `main(argv=None)` parses flags, resolves excludes / output, then calls `walk()` → `to_dot()` → `dot.render()`. `DEFAULT_EXCLUDES` is the built-in basename exclude list.
+- `src/hexamma/cli.py` — argparse + orchestration: `main(argv=None)` parses flags, resolves excludes / output, then calls `walk()` → `to_dot()` → `dot.render()`. `DEFAULT_EXCLUDES` is loaded at import time from `excludes.toml` via `tomllib` + `importlib.resources`.
+- `src/hexamma/excludes.toml` — the built-in basename exclude list, grouped by ecosystem. Add entries here as support for more languages grows.
 - `src/hexamma/tree.py` — pure: `FsNode` NamedTuple + `walk(path, excludes=(), max_depth=None, follow_symlinks=False)` returning a deterministic tree (children sorted alphabetically). Excludes are fnmatch globs against basename. When following symlinks, cycles are broken via a realpath-visited set.
 - `src/hexamma/styling.py` — pure: `Category` enum, palette tables, `categorize` / `node_attrs` / `edge_attrs`
 - `src/hexamma/render.py` — `to_dot(root)` consumes an `FsNode` tree and returns a populated `graphviz.Digraph`

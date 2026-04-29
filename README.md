@@ -20,7 +20,7 @@ The rendered file is written to the system temp directory as
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.11+
 - The Graphviz system binary (`dot` must be on `PATH`)
 - The `graphviz` Python package
 
@@ -75,7 +75,8 @@ To keep diagrams readable, the following basenames are excluded by default
 .git  .hg  .svn
 __pycache__  *.egg-info  .pytest_cache  .mypy_cache  .ruff_cache  .tox
 .venv  venv
-node_modules
+node_modules  .next  .nuxt  .svelte-kit  .astro  .turbo
+target  .bsp  .metals  .bloop  .scala-build
 ```
 
 Pass `--no-default-excludes` to disable, or add your own with `-e PATTERN`

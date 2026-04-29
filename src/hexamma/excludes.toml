@@ -1,0 +1,33 @@
+# Default basenames excluded from directory traversal.
+# Patterns are matched against basenames with fnmatch (globs supported).
+# Add new entries here as support for more languages / ecosystems grows.
+
+[excludes]
+patterns = [
+    # Version control
+    ".git",
+    ".hg",
+    ".svn",
+    # Python
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".tox",
+    ".venv",
+    "venv",
+    "*.egg-info",
+    # JavaScript / Node
+    "node_modules",
+    ".next",
+    ".nuxt",
+    ".svelte-kit",
+    ".astro",
+    ".turbo",
+    # Scala / sbt
+    "target",
+    ".bsp",
+    ".metals",
+    ".bloop",
+    ".scala-build",
+]

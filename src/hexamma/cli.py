@@ -1,26 +1,21 @@
 import argparse
+import importlib.resources
 import os
 import sys
 import tempfile
+import tomllib
 
 from hexamma.render import to_dot
 from hexamma.tree import walk
 
 
-DEFAULT_EXCLUDES = (
-    '.git',
-    '.hg',
-    '.svn',
-    '__pycache__',
-    '.pytest_cache',
-    '.mypy_cache',
-    '.ruff_cache',
-    '.tox',
-    '.venv',
-    'venv',
-    '*.egg-info',
-    'node_modules',
-)
+def _load_default_excludes() -> tuple[str, ...]:
+    ref = importlib.resources.files('hexamma').joinpath('excludes.toml')
+    with ref.open('rb') as f:
+        return tuple(tomllib.load(f)['excludes']['patterns'])
+
+
+DEFAULT_EXCLUDES = _load_default_excludes()
 
 
 def _build_parser():
