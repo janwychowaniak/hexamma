@@ -114,3 +114,26 @@ def test_resolve_output_relative_path_falls_back_to_dot_dir():
     directory, filename = _resolve_output(args, 'ignored')
     assert directory == '.'
     assert filename == 'diagram'
+
+
+# --- mermaid integration ------------------------------------------------------
+
+def test_mermaid_format_writes_mmd_file(tmp_path, monkeypatch):
+    from hexamma.cli import main
+    (tmp_path / 'hello.py').write_text('')
+    monkeypatch.setattr('tempfile.gettempdir', lambda: str(tmp_path))
+    rc = main(['--format', 'mermaid', '--no-default-excludes', str(tmp_path)])
+    assert rc == 0
+    mmd_files = list(tmp_path.glob('*.mmd'))
+    assert len(mmd_files) == 1
+    assert mmd_files[0].read_text().startswith('flowchart TD')
+
+
+def test_mermaid_format_bypasses_graphviz(tmp_path, monkeypatch):
+    from hexamma.cli import main
+    import hexamma.render as render_mod
+    calls = []
+    monkeypatch.setattr(render_mod, 'to_dot', lambda root: calls.append(root) or None)
+    monkeypatch.setattr('tempfile.gettempdir', lambda: str(tmp_path))
+    main(['--format', 'mermaid', '--no-default-excludes', str(tmp_path)])
+    assert calls == []
