@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hexamma"
-version = "0.1.0"
+version = "0.2.0"
 description = "Render a directory tree as a Graphviz diagram."
 readme = "README.md"
 requires-python = ">=3.11"

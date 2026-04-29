@@ -19,4 +19,10 @@ patterns = [
     "*.egg-info",
     # JavaScript / Node
     "node_modules",
+    # Scala / sbt
+    "target",
+    ".bsp",
+    ".metals",
+    ".bloop",
+    ".scala-build",
 ]
