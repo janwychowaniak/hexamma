@@ -61,8 +61,8 @@ def _build_parser():
     parser.add_argument(
         '-f', '--format',
         default='png',
-        help='Output format passed to graphviz (png, svg, pdf, dot, ...). '
-             'Default: png.',
+        help='Output format. Use "mermaid" for a .mmd file, or any graphviz '
+             'format (png, svg, pdf, dot, ...). Default: png.',
     )
     parser.add_argument(
         '--no-view',
@@ -93,6 +93,17 @@ def _resolve_output(args, root_basename):
     return directory, filename
 
 
+def _run_mermaid(args, root):
+    from hexamma.mermaid import to_mermaid
+    text = to_mermaid(root)
+    directory, stem = _resolve_output(args, root.basename)
+    out_path = os.path.join(directory, stem + '.mmd')
+    with open(out_path, 'w', encoding='utf-8') as f:
+        f.write(text)
+    print(out_path)
+    return 0
+
+
 def main(argv=None):
     args = _build_parser().parse_args(argv)
 
@@ -102,6 +113,9 @@ def main(argv=None):
         max_depth=args.max_depth,
         follow_symlinks=args.follow_symlinks,
     )
+    if args.format == 'mermaid':
+        return _run_mermaid(args, root)
+
     dot = to_dot(root)
 
     output_directory, output_filename = _resolve_output(args, root.basename)
