@@ -1,3 +1,5 @@
+import importlib.metadata
+
 from typer.testing import CliRunner
 
 from hexamma.cli import DEFAULT_EXCLUDES, _resolve_excludes, _resolve_output, app, main
@@ -49,6 +51,15 @@ def test_resolve_output_relative_path_falls_back_to_dot_dir():
     directory, filename = _resolve_output('diagram', 'ignored')
     assert directory == '.'
     assert filename == 'diagram'
+
+
+# --- version -----------------------------------------------------------------
+
+
+def test_version_flag():
+    result = runner.invoke(app, ['--version'])
+    assert result.exit_code == 0
+    assert importlib.metadata.version('hexamma') in result.output
 
 
 # --- CLI argument parsing ----------------------------------------------------

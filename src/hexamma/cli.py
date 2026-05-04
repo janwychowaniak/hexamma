@@ -1,3 +1,4 @@
+import importlib.metadata
 import importlib.resources
 import os
 import sys
@@ -21,6 +22,12 @@ def _load_default_excludes() -> tuple[str, ...]:
 DEFAULT_EXCLUDES: tuple[str, ...] = _load_default_excludes()
 
 app = typer.Typer(add_completion=False)
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(importlib.metadata.version('hexamma'))
+        raise typer.Exit()
 
 
 def _resolve_excludes(exclude: list[str], no_default_excludes: bool) -> list[str]:
@@ -51,6 +58,15 @@ def _run_mermaid(output: str | None, root: FsNode) -> None:
 
 @app.command()
 def _command(
+    version: Annotated[
+        bool,
+        typer.Option(
+            '--version',
+            callback=_version_callback,
+            is_eager=True,
+            help='Show version and exit.',
+        ),
+    ] = False,
     path: Annotated[
         str,
         typer.Argument(help='Directory (or file) to visualize. Default: current directory.'),
