@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=77.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "hexamma"
@@ -28,11 +28,6 @@ dependencies = [
     "graphviz >= 0.20",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest >= 7",
-]
-
 [project.urls]
 Homepage = "https://github.com/janwychowaniak/hexamma"
 Repository = "https://github.com/janwychowaniak/hexamma"
@@ -41,11 +36,50 @@ Issues = "https://github.com/janwychowaniak/hexamma/issues"
 [project.scripts]
 hexamma = "hexamma.cli:main"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[dependency-groups]
+dev = [
+    "pytest >= 7",
+    "ruff >= 0.6",
+    "mypy >= 1.10",
+]
 
-[tool.setuptools.package-data]
-hexamma = ["excludes.toml"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/hexamma"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific
+]
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+module = "graphviz.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["test_cli", "test_mermaid", "test_render", "test_styling", "test_tree"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false

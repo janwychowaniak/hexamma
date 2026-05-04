@@ -38,11 +38,25 @@ brew install graphviz
 
 ## Install
 
+This project uses [uv](https://docs.astral.sh/uv/) for environment and
+dependency management:
+
 ```bash
-pip install -e .
+uv sync
 ```
 
-This puts the `hexamma` script onto your `PATH`.
+That creates `.venv/` and installs the package in editable mode. Either
+activate the venv or run the CLI through uv:
+
+```bash
+uv run hexamma
+```
+
+To install the script into a tool environment on your `PATH` instead:
+
+```bash
+uv tool install .
+```
 
 ## Usage
 
@@ -99,12 +113,16 @@ palette entry, and update `categorize` plus the layer-order tuples.
 
 ## Development
 
-Install with the test extras and run the suite:
+`uv sync` installs the `dev` dependency group by default (`pytest`, `ruff`,
+`mypy`). The usual checks:
 
 ```bash
-pip install -e ".[dev]"
-pytest
+uv run pytest
+uv run ruff check
+uv run mypy
 ```
+
+`mypy` is configured in strict mode.
 
 ## License
 

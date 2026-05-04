@@ -14,6 +14,7 @@ def parse(*argv):
 
 # --- defaults ---------------------------------------------------------------
 
+
 def test_defaults_path_is_current_dir():
     args = parse()
     assert args.path == '.'
@@ -31,6 +32,7 @@ def test_defaults_no_excludes_max_depth_or_output():
 
 
 # --- arguments --------------------------------------------------------------
+
 
 def test_positional_path():
     args = parse('/some/dir')
@@ -67,6 +69,7 @@ def test_boolean_flags():
 
 # --- _resolve_excludes ------------------------------------------------------
 
+
 def test_resolve_excludes_combines_user_and_defaults():
     args = parse('--exclude', 'foo')
     excludes = _resolve_excludes(args)
@@ -86,6 +89,7 @@ def test_resolve_excludes_default_only():
 
 
 # --- _resolve_output --------------------------------------------------------
+
 
 def test_resolve_output_default_uses_tempdir_and_named_tree(tmp_path, monkeypatch):
     monkeypatch.setattr('tempfile.gettempdir', lambda: str(tmp_path))
@@ -118,8 +122,10 @@ def test_resolve_output_relative_path_falls_back_to_dot_dir():
 
 # --- mermaid integration ------------------------------------------------------
 
+
 def test_mermaid_format_writes_mmd_file(tmp_path, monkeypatch):
     from hexamma.cli import main
+
     (tmp_path / 'hello.py').write_text('')
     monkeypatch.setattr('tempfile.gettempdir', lambda: str(tmp_path))
     rc = main(['--format', 'mermaid', '--no-default-excludes', str(tmp_path)])
@@ -130,10 +136,11 @@ def test_mermaid_format_writes_mmd_file(tmp_path, monkeypatch):
 
 
 def test_mermaid_format_bypasses_graphviz(tmp_path, monkeypatch):
-    from hexamma.cli import main
     import hexamma.render as render_mod
+    from hexamma.cli import main
+
     calls = []
-    monkeypatch.setattr(render_mod, 'to_dot', lambda root: calls.append(root) or None)
+    monkeypatch.setattr(render_mod, 'to_dot', lambda root: calls.append(root))
     monkeypatch.setattr('tempfile.gettempdir', lambda: str(tmp_path))
     main(['--format', 'mermaid', '--no-default-excludes', str(tmp_path)])
     assert calls == []

@@ -15,7 +15,7 @@ CONFIG_EXTS = frozenset({'.ini', '.yml'})
 DOC_EXTS = frozenset({'.rst'})
 
 
-NODE_PALETTE = {
+NODE_PALETTE: dict[Category, dict[str, str]] = {
     Category.FOLDER: {
         'fillcolor': '#ffe79c',
         'style': 'filled',
@@ -49,9 +49,9 @@ NODE_PALETTE = {
 }
 
 
-EDGE_DEFAULT = {'color': '#919191'}
+EDGE_DEFAULT: dict[str, str] = {'color': '#919191'}
 
-EDGE_PALETTE = {
+EDGE_PALETTE: dict[Category, dict[str, str]] = {
     Category.FOLDER: {'color': '#000000'},
     Category.HIDDEN: {'color': '#b8b8b8', 'style': 'dotted', 'arrowhead': 'empty'},
 }
@@ -69,8 +69,8 @@ _NODE_LAYER_ORDER = (
 _EDGE_LAYER_ORDER = (Category.FOLDER, Category.HIDDEN)
 
 
-def categorize(is_folder, basename):
-    cats = set()
+def categorize(is_folder: bool, basename: str) -> frozenset[Category]:
+    cats: set[Category] = set()
     if is_folder:
         cats.add(Category.FOLDER)
     if basename.startswith('.'):
@@ -85,16 +85,16 @@ def categorize(is_folder, basename):
     return frozenset(cats)
 
 
-def node_attrs(categories):
-    attrs = {}
+def node_attrs(categories: frozenset[Category]) -> dict[str, str]:
+    attrs: dict[str, str] = {}
     for layer in _NODE_LAYER_ORDER:
         if layer in categories:
             attrs.update(NODE_PALETTE[layer])
     return attrs
 
 
-def edge_attrs(categories):
-    attrs = dict(EDGE_DEFAULT)
+def edge_attrs(categories: frozenset[Category]) -> dict[str, str]:
+    attrs: dict[str, str] = dict(EDGE_DEFAULT)
     for layer in _EDGE_LAYER_ORDER:
         if layer in categories:
             attrs.update(EDGE_PALETTE[layer])

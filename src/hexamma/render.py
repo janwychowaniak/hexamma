@@ -9,19 +9,19 @@ descendants always have a non-empty relpath.
 from graphviz import Digraph
 
 from hexamma.styling import categorize, edge_attrs, node_attrs
-
+from hexamma.tree import FsNode
 
 _ROOT_ID = '.'
 
 
-def to_dot(root):
+def to_dot(root: FsNode) -> Digraph:
     """Return a graphviz Digraph populated from the given FsNode tree."""
     dot = Digraph(comment=f'{root.basename} folder tree')
     _add_subtree(dot, root)
     return dot
 
 
-def _add_subtree(dot, node):
+def _add_subtree(dot: Digraph, node: FsNode) -> None:
     src_id = _node_id(node)
     dot.node(src_id, node.basename, **node_attrs(categorize(node.is_dir, node.basename)))
     for child in node.children:
@@ -34,5 +34,5 @@ def _add_subtree(dot, node):
         )
 
 
-def _node_id(node):
+def _node_id(node: FsNode) -> str:
     return node.relpath if node.relpath else _ROOT_ID

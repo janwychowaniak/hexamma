@@ -4,7 +4,8 @@ from hexamma.tree import FsNode
 
 def _node_lines(diagram):
     return [
-        ln for ln in diagram.splitlines()
+        ln
+        for ln in diagram.splitlines()
         if ('["' in ln or '(["' in ln) and '-->' not in ln and 'classDef' not in ln
     ]
 
@@ -19,12 +20,14 @@ def _classdef_lines(diagram):
 
 def _class_assign_lines(diagram):
     return [
-        ln for ln in diagram.splitlines()
+        ln
+        for ln in diagram.splitlines()
         if ln.strip().startswith('class ') and 'classDef' not in ln
     ]
 
 
 # --- header -------------------------------------------------------------------
+
 
 def test_to_mermaid_starts_with_flowchart_td():
     root = FsNode(basename='proj', relpath='', is_dir=True, children=())
@@ -32,6 +35,7 @@ def test_to_mermaid_starts_with_flowchart_td():
 
 
 # --- node / edge counts -------------------------------------------------------
+
 
 def test_to_mermaid_single_file_one_node_no_edges():
     root = FsNode(basename='foo.txt', relpath='', is_dir=False, children=())
@@ -59,6 +63,7 @@ def test_to_mermaid_n_minus_one_edges():
 
 # --- IDs ----------------------------------------------------------------------
 
+
 def test_to_mermaid_root_uses_ROOT_sentinel():
     root = FsNode(basename='proj', relpath='', is_dir=True, children=())
     assert 'ROOT' in to_mermaid(root)
@@ -84,6 +89,7 @@ def test_to_mermaid_node_id_sanitizes_leading_dot():
 
 # --- labels -------------------------------------------------------------------
 
+
 def test_to_mermaid_label_is_basename():
     main = FsNode(basename='main.py', relpath='src/main.py', is_dir=False, children=())
     src = FsNode(basename='src', relpath='src', is_dir=True, children=(main,))
@@ -96,6 +102,7 @@ def test_to_mermaid_label_is_basename():
 
 # --- shapes -------------------------------------------------------------------
 
+
 def test_to_mermaid_folder_uses_stadium_shape():
     root = FsNode(basename='proj', relpath='', is_dir=True, children=())
     diagram = to_mermaid(root)
@@ -107,12 +114,13 @@ def test_to_mermaid_file_uses_rectangle_shape():
     f = FsNode(basename='note.txt', relpath='note.txt', is_dir=False, children=())
     root = FsNode(basename='proj', relpath='', is_dir=True, children=(f,))
     diagram = to_mermaid(root)
-    file_line = [ln for ln in _node_lines(diagram) if 'note.txt' in ln][0]
+    file_line = next(ln for ln in _node_lines(diagram) if 'note.txt' in ln)
     assert '["note.txt"]' in file_line
     assert '(["note.txt"])' not in file_line
 
 
 # --- edge styles --------------------------------------------------------------
+
 
 def test_to_mermaid_hidden_file_edge_is_dotted():
     hidden = FsNode(basename='.gitignore', relpath='.gitignore', is_dir=False, children=())
@@ -132,10 +140,11 @@ def test_to_mermaid_plain_file_edge_is_solid():
 
 # --- class assignments --------------------------------------------------------
 
+
 def test_to_mermaid_folder_gets_folder_class():
     root = FsNode(basename='proj', relpath='', is_dir=True, children=())
     diagram = to_mermaid(root)
-    assign = [ln for ln in _class_assign_lines(diagram) if 'ROOT' in ln][0]
+    assign = next(ln for ln in _class_assign_lines(diagram) if 'ROOT' in ln)
     assert 'folder_cls' in assign
 
 
@@ -143,7 +152,7 @@ def test_to_mermaid_source_file_gets_source_class():
     f = FsNode(basename='main.py', relpath='main.py', is_dir=False, children=())
     root = FsNode(basename='proj', relpath='', is_dir=True, children=(f,))
     diagram = to_mermaid(root)
-    assign = [ln for ln in _class_assign_lines(diagram) if 'main_dot_py' in ln][0]
+    assign = next(ln for ln in _class_assign_lines(diagram) if 'main_dot_py' in ln)
     assert 'source_cls' in assign
 
 
@@ -152,11 +161,12 @@ def test_to_mermaid_hidden_folder_gets_hidden_class():
     git = FsNode(basename='.git', relpath='.git', is_dir=True, children=())
     root = FsNode(basename='proj', relpath='', is_dir=True, children=(git,))
     diagram = to_mermaid(root)
-    assign = [ln for ln in _class_assign_lines(diagram) if '_dot_git' in ln][0]
+    assign = next(ln for ln in _class_assign_lines(diagram) if '_dot_git' in ln)
     assert 'hidden_cls' in assign
 
 
 # --- classDef stability -------------------------------------------------------
+
 
 def test_to_mermaid_all_classdefs_always_emitted():
     root = FsNode(basename='proj', relpath='', is_dir=False, children=())
@@ -168,6 +178,7 @@ def test_to_mermaid_all_classdefs_always_emitted():
 
 
 # --- deep nesting -------------------------------------------------------------
+
 
 def test_to_mermaid_deeply_nested_id_is_safe():
     c = FsNode(basename='c.py', relpath='a/b/c.py', is_dir=False, children=())

@@ -12,17 +12,23 @@ treated as leaves, matching the convention of ``find`` / ``tree`` / ``du``.
 
 import fnmatch
 import os
-from typing import NamedTuple, Tuple
+from collections.abc import Iterable
+from typing import NamedTuple
 
 
 class FsNode(NamedTuple):
     basename: str
     relpath: str
     is_dir: bool
-    children: Tuple['FsNode', ...]
+    children: tuple['FsNode', ...]
 
 
-def walk(path, excludes=(), max_depth=None, follow_symlinks=False):
+def walk(
+    path: str,
+    excludes: Iterable[str] = (),
+    max_depth: int | None = None,
+    follow_symlinks: bool = False,
+) -> FsNode:
     """Return an FsNode tree rooted at ``path``.
 
     The root node has ``relpath == ''``; descendants carry an os.sep
@@ -53,7 +59,16 @@ def walk(path, excludes=(), max_depth=None, follow_symlinks=False):
     )
 
 
-def _build_node(abs_path, basename, relpath, depth, max_depth, excludes, follow_symlinks, visited):
+def _build_node(
+    abs_path: str,
+    basename: str,
+    relpath: str,
+    depth: int,
+    max_depth: int | None,
+    excludes: tuple[str, ...],
+    follow_symlinks: bool,
+    visited: set[str],
+) -> FsNode:
     is_dir = os.path.isdir(abs_path)
     children = _children(
         abs_path=abs_path,
@@ -68,7 +83,16 @@ def _build_node(abs_path, basename, relpath, depth, max_depth, excludes, follow_
     return FsNode(basename=basename, relpath=relpath, is_dir=is_dir, children=children)
 
 
-def _children(abs_path, relpath, is_dir, depth, max_depth, excludes, follow_symlinks, visited):
+def _children(
+    abs_path: str,
+    relpath: str,
+    is_dir: bool,
+    depth: int,
+    max_depth: int | None,
+    excludes: tuple[str, ...],
+    follow_symlinks: bool,
+    visited: set[str],
+) -> tuple[FsNode, ...]:
     if not is_dir:
         return ()
     if not follow_symlinks and os.path.islink(abs_path):
@@ -81,10 +105,7 @@ def _children(abs_path, relpath, is_dir, depth, max_depth, excludes, follow_syml
         return ()
     visited.add(real)
 
-    entries = sorted(
-        entry for entry in os.listdir(abs_path)
-        if not _is_excluded(entry, excludes)
-    )
+    entries = sorted(entry for entry in os.listdir(abs_path) if not _is_excluded(entry, excludes))
     return tuple(
         _build_node(
             abs_path=os.path.join(abs_path, entry),
@@ -100,5 +121,5 @@ def _children(abs_path, relpath, is_dir, depth, max_depth, excludes, follow_syml
     )
 
 
-def _is_excluded(basename, excludes):
+def _is_excluded(basename: str, excludes: tuple[str, ...]) -> bool:
     return any(fnmatch.fnmatch(basename, pattern) for pattern in excludes)

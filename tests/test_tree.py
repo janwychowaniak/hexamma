@@ -102,6 +102,7 @@ def test_walk_accepts_relative_path(tmp_path, monkeypatch):
 
 # --- excludes ---------------------------------------------------------------
 
+
 def test_walk_excludes_filter_children_by_basename(tmp_path):
     (tmp_path / 'keep.py').write_text('')
     (tmp_path / 'drop.py').write_text('')
@@ -147,6 +148,7 @@ def test_walk_multiple_exclude_patterns_combine(tmp_path):
 
 # --- max_depth --------------------------------------------------------------
 
+
 def test_walk_max_depth_zero_returns_root_only(tmp_path):
     (tmp_path / 'a.txt').write_text('')
     (tmp_path / 'sub').mkdir()
@@ -172,6 +174,7 @@ def test_walk_max_depth_none_is_unlimited(tmp_path):
 
 
 # --- follow_symlinks --------------------------------------------------------
+
 
 def test_walk_does_not_follow_dir_symlinks_by_default(tmp_path):
     real = tmp_path / 'real'

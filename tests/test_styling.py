@@ -5,8 +5,8 @@ from hexamma.styling import (
     node_attrs,
 )
 
-
 # --- categorize -------------------------------------------------------------
+
 
 def test_categorize_regular_file_is_uncategorized():
     assert categorize(False, 'foo.txt') == frozenset()
@@ -55,6 +55,7 @@ def test_categorize_dotfile_with_no_secondary_extension_is_only_hidden():
 
 # --- node_attrs -------------------------------------------------------------
 
+
 def test_node_attrs_uncategorized_is_empty():
     assert node_attrs(frozenset()) == {}
 
@@ -100,6 +101,7 @@ def test_node_attrs_hidden_source_source_layer_dominates():
 
 
 # --- edge_attrs -------------------------------------------------------------
+
 
 def test_edge_attrs_default():
     assert edge_attrs(frozenset()) == {'color': '#919191'}

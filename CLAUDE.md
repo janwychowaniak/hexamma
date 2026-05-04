@@ -8,18 +8,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-Install (requires the system `graphviz` binary in addition to the Python package):
+Install (requires the system `graphviz` binary in addition to the Python package). The project uses `uv` for env/dependency management:
 
 ```
-pip install -e .
+uv sync
 ```
 
-This puts the `hexamma` script onto `PATH` via the `[project.scripts]` entry point in `pyproject.toml`. `python -m hexamma` works too (uses `src/hexamma/__main__.py`).
+This creates `.venv/` and installs the package in editable mode. Run the CLI inside the activated venv or via `uv run hexamma`. The `hexamma` script is wired through the `[project.scripts]` entry point in `pyproject.toml`; `python -m hexamma` works too (uses `src/hexamma/__main__.py`).
 
 Default invocation renders the current directory as PNG to the system tempdir, then opens the system viewer:
 
 ```
-hexamma
+uv run hexamma
 ```
 
 Common flag combinations:
@@ -34,14 +34,24 @@ hexamma --no-view                    # don't open the viewer (useful in CI / SSH
 hexamma -L                           # follow directory symlinks (cycles broken)
 ```
 
-Tests:
+Tests (`uv sync` already installs the `dev` group, which includes `pytest`, `ruff`, and `mypy`):
 
 ```
-pip install -e ".[dev]"
-pytest
+uv run pytest
 ```
 
-There is no lint config yet.
+Lint and type-check:
+
+```
+uv run ruff check
+uv run mypy
+```
+
+`mypy` runs in `strict` mode against `src/` and `tests/`. Test files are exempt
+from `disallow_untyped_defs` / `disallow_untyped_calls` so `def test_x():`
+stays untyped — listed by name in the override block in `pyproject.toml`.
+Library code in `src/hexamma/` is fully annotated and the package is marked
+PEP 561-typed via `src/hexamma/py.typed`.
 
 ## Architecture
 
@@ -54,7 +64,8 @@ Layout is a `src/`-style package:
 - `src/hexamma/render.py` — `to_dot(root)` consumes an `FsNode` tree and returns a populated `graphviz.Digraph`
 - `src/hexamma/__main__.py` — module entry point
 - `src/hexamma/__init__.py` — empty
-- `pyproject.toml` — PEP 621 metadata, setuptools backend, `hexamma = "hexamma.cli:main"` entry point, `[dev]` extras with `pytest`
+- `pyproject.toml` — PEP 621 metadata, hatchling build backend, `hexamma = "hexamma.cli:main"` entry point, `[dependency-groups]` with a `dev` group (`pytest`)
+- `uv.lock` — uv's resolved lockfile, committed to the repo
 - `tests/test_tree.py` — covers `walk()` and its filters against `tmp_path` fixtures
 - `tests/test_styling.py` — covers categorize + attr-layering semantics
 - `tests/test_render.py` — covers Digraph structure (node/edge counts, IDs, labels, key styling)
