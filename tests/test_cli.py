@@ -3,7 +3,8 @@ import json
 
 from typer.testing import CliRunner
 
-from hexamma.cli import DEFAULT_EXCLUDES, _resolve_excludes, _resolve_output, app, main
+from hexamma.cli import DEFAULT_EXCLUDES, _count_tree, _resolve_excludes, _resolve_output, app, main
+from hexamma.tree import FsNode
 
 runner = CliRunner()
 
@@ -52,6 +53,60 @@ def test_resolve_output_relative_path_falls_back_to_dot_dir():
     directory, filename = _resolve_output('diagram', 'ignored')
     assert directory == '.'
     assert filename == 'diagram'
+
+
+# --- _count_tree -------------------------------------------------------------
+
+
+def test_count_tree_empty_dir():
+    root = FsNode(basename='root', relpath='', is_dir=True, children=())
+    assert _count_tree(root) == (0, 0)
+
+
+def test_count_tree_files_only():
+    children = (
+        FsNode(basename='a.py', relpath='a.py', is_dir=False, children=()),
+        FsNode(basename='b.txt', relpath='b.txt', is_dir=False, children=()),
+    )
+    root = FsNode(basename='root', relpath='', is_dir=True, children=children)
+    assert _count_tree(root) == (2, 0)
+
+
+def test_count_tree_nested():
+    leaf = FsNode(basename='main.py', relpath='src/main.py', is_dir=False, children=())
+    src = FsNode(basename='src', relpath='src', is_dir=True, children=(leaf,))
+    readme = FsNode(basename='README.md', relpath='README.md', is_dir=False, children=())
+    root = FsNode(basename='proj', relpath='', is_dir=True, children=(readme, src))
+    files, dirs = _count_tree(root)
+    assert files == 2  # README.md + main.py
+    assert dirs == 1   # src
+
+
+def test_count_tree_singular_labels(tmp_path):
+    (tmp_path / 'only.py').write_text('')
+    (tmp_path / 'sub').mkdir()
+    result = runner.invoke(
+        app,
+        ['--stats', '--format', 'json', '--no-default-excludes', str(tmp_path)],
+    )
+    assert result.exit_code == 0
+    assert '1 file,' in result.output
+    assert '1 directory' in result.output
+
+
+def test_stats_flag_separates_stderr_from_stdout(tmp_path):
+    (tmp_path / 'a.py').write_text('')
+    (tmp_path / 'b.txt').write_text('')
+    (tmp_path / 'sub').mkdir()
+    (tmp_path / 'sub' / 'c.py').write_text('')
+    result = runner.invoke(
+        app,
+        ['--stats', '--format', 'json', '--no-default-excludes', str(tmp_path)],
+    )
+    assert result.exit_code == 0
+    assert '3 files' in result.stderr
+    assert '1 directory' in result.stderr
+    json.loads(result.stdout)  # stdout is clean JSON
 
 
 # --- version -----------------------------------------------------------------

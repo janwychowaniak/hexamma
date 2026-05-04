@@ -45,6 +45,19 @@ def _resolve_output(output: str | None, root_basename: str) -> tuple[str, str]:
     return directory, filename
 
 
+def _count_tree(node: FsNode) -> tuple[int, int]:
+    files = dirs = 0
+    for child in node.children:
+        if child.is_dir:
+            dirs += 1
+            f, d = _count_tree(child)
+            files += f
+            dirs += d
+        else:
+            files += 1
+    return files, dirs
+
+
 def _run_json(output: str | None, root: FsNode) -> None:
     from hexamma.json_output import to_json
 
@@ -147,6 +160,10 @@ def _command(
             help='Follow directory symlinks (cycles broken). Default: do not follow.',
         ),
     ] = False,
+    stats: Annotated[
+        bool,
+        typer.Option('--stats', help='Print file and directory counts to stderr after rendering.'),
+    ] = False,
 ) -> None:
     root = walk(
         path,
@@ -155,6 +172,13 @@ def _command(
         max_depth=max_depth,
         follow_symlinks=follow_symlinks,
     )
+    if stats:
+        files, dirs = _count_tree(root)
+        typer.echo(
+            f'{files} {"file" if files == 1 else "files"}, '
+            f'{dirs} {"directory" if dirs == 1 else "directories"}',
+            err=True,
+        )
     if fmt == 'json':
         _run_json(output, root)
         return
