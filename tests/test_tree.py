@@ -173,6 +173,60 @@ def test_walk_max_depth_none_is_unlimited(tmp_path):
     assert leaf.basename == 'leaf.txt'
 
 
+# --- includes ---------------------------------------------------------------
+
+
+def test_walk_includes_empty_means_include_all(tmp_path):
+    (tmp_path / 'a.py').write_text('')
+    (tmp_path / 'b.txt').write_text('')
+    node = walk(str(tmp_path), includes=[])
+    assert [c.basename for c in node.children] == ['a.py', 'b.txt']
+
+
+def test_walk_includes_filter_files_by_basename(tmp_path):
+    (tmp_path / 'keep.py').write_text('')
+    (tmp_path / 'drop.txt').write_text('')
+    node = walk(str(tmp_path), includes=['*.py'])
+    assert [c.basename for c in node.children] == ['keep.py']
+
+
+def test_walk_includes_use_fnmatch_globs(tmp_path):
+    (tmp_path / 'a.py').write_text('')
+    (tmp_path / 'b.py').write_text('')
+    (tmp_path / 'c.txt').write_text('')
+    node = walk(str(tmp_path), includes=['*.py'])
+    assert [c.basename for c in node.children] == ['a.py', 'b.py']
+
+
+def test_walk_includes_always_traverse_directories(tmp_path):
+    (tmp_path / 'src').mkdir()
+    (tmp_path / 'src' / 'main.py').write_text('')
+    (tmp_path / 'src' / 'notes.txt').write_text('')
+    (tmp_path / 'README.md').write_text('')
+    node = walk(str(tmp_path), includes=['*.py'])
+    names = [c.basename for c in node.children]
+    assert 'src' in names
+    assert 'README.md' not in names
+    src = next(c for c in node.children if c.basename == 'src')
+    assert [c.basename for c in src.children] == ['main.py']
+
+
+def test_walk_includes_and_excludes_combine(tmp_path):
+    (tmp_path / 'keep.py').write_text('')
+    (tmp_path / 'drop.py').write_text('')
+    (tmp_path / 'other.txt').write_text('')
+    node = walk(str(tmp_path), includes=['*.py'], excludes=['drop.py'])
+    assert [c.basename for c in node.children] == ['keep.py']
+
+
+def test_walk_includes_multiple_patterns(tmp_path):
+    (tmp_path / 'a.py').write_text('')
+    (tmp_path / 'b.js').write_text('')
+    (tmp_path / 'c.md').write_text('')
+    node = walk(str(tmp_path), includes=['*.py', '*.js'])
+    assert [c.basename for c in node.children] == ['a.py', 'b.js']
+
+
 # --- follow_symlinks --------------------------------------------------------
 
 

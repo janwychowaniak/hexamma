@@ -104,6 +104,22 @@ def test_json_format_writes_file_when_output_given(tmp_path):
     assert (tmp_path / 'tree.json').exists()
 
 
+# --- include filter ----------------------------------------------------------
+
+
+def test_include_filters_files_via_json(tmp_path):
+    (tmp_path / 'a.py').write_text('')
+    (tmp_path / 'b.txt').write_text('')
+    result = runner.invoke(
+        app, ['-i', '*.py', '--format', 'json', '--no-default-excludes', str(tmp_path)]
+    )
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    names = [c['name'] for c in data['children']]
+    assert 'a.py' in names
+    assert 'b.txt' not in names
+
+
 # --- mermaid integration -----------------------------------------------------
 
 

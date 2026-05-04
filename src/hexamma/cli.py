@@ -129,6 +129,16 @@ def _command(
         bool,
         typer.Option('--no-view', help='Do not open the rendered file in the default viewer.'),
     ] = False,
+    include: Annotated[
+        list[str] | None,
+        typer.Option(
+            '-i',
+            '--include',
+            help='fnmatch pattern to include (files only, matched against basename). '
+            'Repeatable. When set, files not matching any pattern are hidden; '
+            'directories are always shown.',
+        ),
+    ] = None,
     follow_symlinks: Annotated[
         bool,
         typer.Option(
@@ -141,6 +151,7 @@ def _command(
     root = walk(
         path,
         excludes=_resolve_excludes(exclude or [], no_default_excludes),
+        includes=include or [],
         max_depth=max_depth,
         follow_symlinks=follow_symlinks,
     )
