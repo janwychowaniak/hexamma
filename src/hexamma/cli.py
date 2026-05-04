@@ -31,39 +31,43 @@ def _build_parser() -> argparse.ArgumentParser:
         help='Directory (or file) to visualize. Default: current directory.',
     )
     parser.add_argument(
-        '-e', '--exclude',
+        '-e',
+        '--exclude',
         action='append',
         default=[],
         metavar='PATTERN',
         help='fnmatch pattern to exclude (matched against basename). '
-             'Repeatable. Combined with the default excludes unless '
-             '--no-default-excludes is given.',
+        'Repeatable. Combined with the default excludes unless '
+        '--no-default-excludes is given.',
     )
     parser.add_argument(
         '--no-default-excludes',
         action='store_true',
         help='Disable the built-in exclude list '
-             '(.git, __pycache__, node_modules, *.egg-info, ...).',
+        '(.git, __pycache__, node_modules, *.egg-info, ...).',
     )
     parser.add_argument(
-        '-d', '--max-depth',
+        '-d',
+        '--max-depth',
         type=int,
         default=None,
         metavar='N',
         help='Maximum tree depth (root is depth 0). Default: unlimited.',
     )
     parser.add_argument(
-        '-o', '--output',
+        '-o',
+        '--output',
         default=None,
         metavar='PATH',
         help='Output file path (extension is replaced by --format). '
-             'Default: <tempdir>/tree__<basename>.<format>.',
+        'Default: <tempdir>/tree__<basename>.<format>.',
     )
     parser.add_argument(
-        '-f', '--format',
+        '-f',
+        '--format',
         default='png',
         help='Output format. Use "mermaid" for a .mmd file, or any graphviz '
-             'format (png, svg, pdf, dot, ...). Default: png.',
+        'format (png, svg, pdf, dot, ...). Default: png.',
     )
     parser.add_argument(
         '--no-view',
@@ -71,10 +75,10 @@ def _build_parser() -> argparse.ArgumentParser:
         help='Do not open the rendered file in the default viewer.',
     )
     parser.add_argument(
-        '-L', '--follow-symlinks',
+        '-L',
+        '--follow-symlinks',
         action='store_true',
-        help='Follow directory symlinks (cycles are broken on revisit). '
-             'Default: do not follow.',
+        help='Follow directory symlinks (cycles are broken on revisit). Default: do not follow.',
     )
     return parser
 
@@ -96,6 +100,7 @@ def _resolve_output(args: argparse.Namespace, root_basename: str) -> tuple[str, 
 
 def _run_mermaid(args: argparse.Namespace, root: FsNode) -> int:
     from hexamma.mermaid import to_mermaid
+
     text = to_mermaid(root)
     directory, stem = _resolve_output(args, root.basename)
     out_path = os.path.join(directory, stem + '.mmd')

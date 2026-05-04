@@ -16,17 +16,17 @@ _CLASS_NAMES: dict[Category, str] = {
     Category.HIDDEN: 'hidden_cls',
     Category.SOURCE: 'source_cls',
     Category.CONFIG: 'config_cls',
-    Category.DOC:    'doc_cls',
+    Category.DOC: 'doc_cls',
 }
 _DEFAULT_CLASS_NAME = 'default_file'
 
 # CSS strings for each classDef line; order matches _NODE_LAYER_ORDER.
 _CLASSDEFS: list[tuple[str, str]] = [
-    ('folder_cls',   'fill:#ffe79c,stroke:#919191,color:#000000'),
-    ('hidden_cls',   'fill:#ffffff,stroke:#b8b8b8,color:#b8b8b8'),
-    ('source_cls',   'fill:#4381b3,stroke:#ffffff,color:#ffd343'),
-    ('config_cls',   'fill:#e1e1e1,stroke:#919191,color:#000000'),
-    ('doc_cls',      'fill:#f6f6f6,stroke:#eaa61d,color:#e96028'),
+    ('folder_cls', 'fill:#ffe79c,stroke:#919191,color:#000000'),
+    ('hidden_cls', 'fill:#ffffff,stroke:#b8b8b8,color:#b8b8b8'),
+    ('source_cls', 'fill:#4381b3,stroke:#ffffff,color:#ffd343'),
+    ('config_cls', 'fill:#e1e1e1,stroke:#919191,color:#000000'),
+    ('doc_cls', 'fill:#f6f6f6,stroke:#eaa61d,color:#e96028'),
     (_DEFAULT_CLASS_NAME, 'fill:#ffffff,stroke:#919191,color:#000000'),
 ]
 
