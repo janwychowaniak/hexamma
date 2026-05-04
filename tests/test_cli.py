@@ -130,10 +130,10 @@ def test_mermaid_format_writes_mmd_file(tmp_path, monkeypatch):
 
 
 def test_mermaid_format_bypasses_graphviz(tmp_path, monkeypatch):
-    from hexamma.cli import main
     import hexamma.render as render_mod
+    from hexamma.cli import main
     calls = []
-    monkeypatch.setattr(render_mod, 'to_dot', lambda root: calls.append(root) or None)
+    monkeypatch.setattr(render_mod, 'to_dot', lambda root: calls.append(root))
     monkeypatch.setattr('tempfile.gettempdir', lambda: str(tmp_path))
     main(['--format', 'mermaid', '--no-default-excludes', str(tmp_path)])
     assert calls == []

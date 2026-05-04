@@ -5,7 +5,6 @@ from hexamma.styling import (
     node_attrs,
 )
 
-
 # --- categorize -------------------------------------------------------------
 
 def test_categorize_regular_file_is_uncategorized():

@@ -113,11 +113,16 @@ palette entry, and update `categorize` plus the layer-order tuples.
 
 ## Development
 
-`uv sync` installs the `dev` dependency group by default. Run the suite with:
+`uv sync` installs the `dev` dependency group by default (`pytest`, `ruff`,
+`mypy`). The usual checks:
 
 ```bash
 uv run pytest
+uv run ruff check
+uv run mypy
 ```
+
+`mypy` is configured in strict mode.
 
 ## License
 

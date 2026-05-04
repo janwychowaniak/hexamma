@@ -34,13 +34,24 @@ hexamma --no-view                    # don't open the viewer (useful in CI / SSH
 hexamma -L                           # follow directory symlinks (cycles broken)
 ```
 
-Tests (`uv sync` already installs the `dev` group, which includes `pytest`):
+Tests (`uv sync` already installs the `dev` group, which includes `pytest`, `ruff`, and `mypy`):
 
 ```
 uv run pytest
 ```
 
-There is no lint config yet.
+Lint and type-check:
+
+```
+uv run ruff check
+uv run mypy
+```
+
+`mypy` runs in `strict` mode against `src/` and `tests/`. Test files are exempt
+from `disallow_untyped_defs` / `disallow_untyped_calls` so `def test_x():`
+stays untyped — listed by name in the override block in `pyproject.toml`.
+Library code in `src/hexamma/` is fully annotated and the package is marked
+PEP 561-typed via `src/hexamma/py.typed`.
 
 ## Architecture
 

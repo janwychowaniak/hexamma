@@ -80,7 +80,7 @@ def test_to_dot_python_source_node_uses_box_shape():
     root = FsNode(basename='proj', relpath='', is_dir=True, children=(f,))
     dot = to_dot(root)
     # Find the line for m.py and assert it has the source styling.
-    line = [ln for ln in _node_lines(dot) if 'm.py' in ln][0]
+    line = next(ln for ln in _node_lines(dot) if 'm.py' in ln)
     assert 'shape=box' in line
     assert 'fillcolor="#4381b3"' in line
 
