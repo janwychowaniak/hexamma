@@ -57,19 +57,21 @@ PEP 561-typed via `src/hexamma/py.typed`.
 
 Layout is a `src/`-style package:
 
-- `src/hexamma/cli.py` — argparse + orchestration: `main(argv=None)` parses flags, resolves excludes / output, then calls `walk()` → `to_dot()` → `dot.render()`. `DEFAULT_EXCLUDES` is loaded at import time from `excludes.toml` via `tomllib` + `importlib.resources`.
+- `src/hexamma/cli.py` — typer + orchestration: `main(argv=None)` parses flags, resolves excludes / output, then calls `walk()` → format handler → output. `DEFAULT_EXCLUDES` is loaded at import time from `excludes.toml` via `tomllib` + `importlib.resources`.
 - `src/hexamma/excludes.toml` — the built-in basename exclude list, grouped by ecosystem. Add entries here as support for more languages grows.
-- `src/hexamma/tree.py` — pure: `FsNode` NamedTuple + `walk(path, excludes=(), max_depth=None, follow_symlinks=False)` returning a deterministic tree (children sorted alphabetically). Excludes are fnmatch globs against basename. When following symlinks, cycles are broken via a realpath-visited set.
+- `src/hexamma/tree.py` — pure: `FsNode` NamedTuple + `walk(path, excludes=(), includes=(), max_depth=None, follow_symlinks=False)` returning a deterministic tree (children sorted alphabetically). Excludes and includes are fnmatch globs against basename. When following symlinks, cycles are broken via a realpath-visited set.
 - `src/hexamma/styling.py` — pure: `Category` enum, palette tables, `categorize` / `node_attrs` / `edge_attrs`
 - `src/hexamma/render.py` — `to_dot(root)` consumes an `FsNode` tree and returns a populated `graphviz.Digraph`
+- `src/hexamma/json_output.py` — pure: `to_json(root)` serialises an `FsNode` tree to indented JSON
 - `src/hexamma/__main__.py` — module entry point
 - `src/hexamma/__init__.py` — empty
-- `pyproject.toml` — PEP 621 metadata, hatchling build backend, `hexamma = "hexamma.cli:main"` entry point, `[dependency-groups]` with a `dev` group (`pytest`)
+- `pyproject.toml` — PEP 621 metadata, hatchling build backend, `hexamma = "hexamma.cli:main"` entry point, `[dependency-groups]` with a `dev` group (`pytest`, `pytest-cov`, `ruff`, `mypy`)
 - `uv.lock` — uv's resolved lockfile, committed to the repo
 - `tests/test_tree.py` — covers `walk()` and its filters against `tmp_path` fixtures
 - `tests/test_styling.py` — covers categorize + attr-layering semantics
 - `tests/test_render.py` — covers Digraph structure (node/edge counts, IDs, labels, key styling)
-- `tests/test_cli.py` — covers argparse defaults, repeatable flags, and the `_resolve_excludes` / `_resolve_output` helpers
+- `tests/test_cli.py` — covers CLI flags, helpers, and format integration
+- `tests/test_json_output.py` — covers `to_json` serialisation
 
 The pipeline is `walk(path, ...) -> FsNode tree -> to_dot(root) -> graphviz.Digraph -> dot.render(...)`. Each seam is independently testable: traversal needs only a temp dir, styling needs no I/O, rendering produces a Digraph whose `.source` / `.body` can be inspected without the system `dot` binary, and CLI parsing is verified without invoking graphviz at all.
 
@@ -79,4 +81,4 @@ Three things to know to make non-trivial changes:
 
 2. **Styling is layered, last-write-wins.** `categorize(is_folder, basename)` returns a `frozenset[Category]`. `node_attrs` / `edge_attrs` apply per-category palette layers in a fixed order (`_NODE_LAYER_ORDER` / `_EDGE_LAYER_ORDER` in `styling.py`); later layers overwrite earlier ones on attr-key collisions. Adding a category means: add a `Category` member, an extension set, a `NODE_PALETTE` / `EDGE_PALETTE` entry, a clause in `categorize`, and the appropriate position in the layer-order tuples.
 
-3. **Excludes are basename-only fnmatch globs and never apply to the root.** `walk()` filters children before recursing, so an exclude pattern that matches a directory name short-circuits the entire subtree. The root is excluded from this filter — if you `walk('.git/', excludes=['.git'])`, you still get the `.git/` tree, just with its children filtered. CLI users get `DEFAULT_EXCLUDES` (`.git`, `__pycache__`, `*.egg-info`, `node_modules`, etc.) merged in unless they pass `--no-default-excludes`.
+3. **Excludes and includes are basename-only fnmatch globs and never apply to the root.** `walk()` filters children before recursing, so an exclude pattern that matches a directory name short-circuits the entire subtree. Includes work the inverse way for *files only* — directories always pass the include filter so that a pattern like `*.py` still descends into subdirectories. The root is never filtered. CLI users get `DEFAULT_EXCLUDES` (`.git`, `__pycache__`, `*.egg-info`, `node_modules`, etc.) merged in unless they pass `--no-default-excludes`.

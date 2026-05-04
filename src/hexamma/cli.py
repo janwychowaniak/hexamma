@@ -1,10 +1,13 @@
-import argparse
+import importlib.metadata
 import importlib.resources
 import os
 import sys
 import tempfile
 import tomllib
 from collections.abc import Sequence
+from typing import Annotated
+
+import typer
 
 from hexamma.render import to_dot
 from hexamma.tree import FsNode, walk
@@ -18,121 +21,191 @@ def _load_default_excludes() -> tuple[str, ...]:
 
 DEFAULT_EXCLUDES: tuple[str, ...] = _load_default_excludes()
 
-
-def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog='hexamma',
-        description='Render a directory tree as a Graphviz diagram.',
-    )
-    parser.add_argument(
-        'path',
-        nargs='?',
-        default='.',
-        help='Directory (or file) to visualize. Default: current directory.',
-    )
-    parser.add_argument(
-        '-e',
-        '--exclude',
-        action='append',
-        default=[],
-        metavar='PATTERN',
-        help='fnmatch pattern to exclude (matched against basename). '
-        'Repeatable. Combined with the default excludes unless '
-        '--no-default-excludes is given.',
-    )
-    parser.add_argument(
-        '--no-default-excludes',
-        action='store_true',
-        help='Disable the built-in exclude list '
-        '(.git, __pycache__, node_modules, *.egg-info, ...).',
-    )
-    parser.add_argument(
-        '-d',
-        '--max-depth',
-        type=int,
-        default=None,
-        metavar='N',
-        help='Maximum tree depth (root is depth 0). Default: unlimited.',
-    )
-    parser.add_argument(
-        '-o',
-        '--output',
-        default=None,
-        metavar='PATH',
-        help='Output file path (extension is replaced by --format). '
-        'Default: <tempdir>/tree__<basename>.<format>.',
-    )
-    parser.add_argument(
-        '-f',
-        '--format',
-        default='png',
-        help='Output format. Use "mermaid" for a .mmd file, or any graphviz '
-        'format (png, svg, pdf, dot, ...). Default: png.',
-    )
-    parser.add_argument(
-        '--no-view',
-        action='store_true',
-        help='Do not open the rendered file in the default viewer.',
-    )
-    parser.add_argument(
-        '-L',
-        '--follow-symlinks',
-        action='store_true',
-        help='Follow directory symlinks (cycles are broken on revisit). Default: do not follow.',
-    )
-    return parser
+app = typer.Typer(add_completion=False)
 
 
-def _resolve_excludes(args: argparse.Namespace) -> list[str]:
-    excludes: list[str] = list(args.exclude)
-    if not args.no_default_excludes:
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(importlib.metadata.version('hexamma'))
+        raise typer.Exit()
+
+
+def _resolve_excludes(exclude: list[str], no_default_excludes: bool) -> list[str]:
+    excludes = list(exclude)
+    if not no_default_excludes:
         excludes.extend(DEFAULT_EXCLUDES)
     return excludes
 
 
-def _resolve_output(args: argparse.Namespace, root_basename: str) -> tuple[str, str]:
-    if args.output is None:
+def _resolve_output(output: str | None, root_basename: str) -> tuple[str, str]:
+    if output is None:
         return tempfile.gettempdir(), f'tree__{root_basename}'
-    directory = os.path.dirname(args.output) or '.'
-    filename = os.path.splitext(os.path.basename(args.output))[0]
+    directory = os.path.dirname(output) or '.'
+    filename = os.path.splitext(os.path.basename(output))[0]
     return directory, filename
 
 
-def _run_mermaid(args: argparse.Namespace, root: FsNode) -> int:
+def _count_tree(node: FsNode) -> tuple[int, int]:
+    files = dirs = 0
+    for child in node.children:
+        if child.is_dir:
+            dirs += 1
+            f, d = _count_tree(child)
+            files += f
+            dirs += d
+        else:
+            files += 1
+    return files, dirs
+
+
+def _run_json(output: str | None, root: FsNode) -> None:
+    from hexamma.json_output import to_json
+
+    text = to_json(root)
+    if output is None:
+        print(text)
+        return
+    directory, stem = _resolve_output(output, root.basename)
+    out_path = os.path.join(directory, stem + '.json')
+    with open(out_path, 'w', encoding='utf-8') as f:
+        f.write(text)
+    print(out_path)
+
+
+def _run_mermaid(output: str | None, root: FsNode) -> None:
     from hexamma.mermaid import to_mermaid
 
     text = to_mermaid(root)
-    directory, stem = _resolve_output(args, root.basename)
+    directory, stem = _resolve_output(output, root.basename)
     out_path = os.path.join(directory, stem + '.mmd')
     with open(out_path, 'w', encoding='utf-8') as f:
         f.write(text)
     print(out_path)
-    return 0
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    args = _build_parser().parse_args(argv)
-
+@app.command()
+def _command(
+    version: Annotated[
+        bool,
+        typer.Option(
+            '--version',
+            callback=_version_callback,
+            is_eager=True,
+            help='Show version and exit.',
+        ),
+    ] = False,
+    path: Annotated[
+        str,
+        typer.Argument(help='Directory (or file) to visualize. Default: current directory.'),
+    ] = '.',
+    exclude: Annotated[
+        list[str] | None,
+        typer.Option(
+            '-e',
+            '--exclude',
+            help='fnmatch pattern to exclude (basename). Repeatable. '
+            'Combined with default excludes unless --no-default-excludes.',
+        ),
+    ] = None,
+    no_default_excludes: Annotated[
+        bool,
+        typer.Option(
+            '--no-default-excludes',
+            help='Disable built-in exclude list (.git, __pycache__, node_modules, ...).',
+        ),
+    ] = False,
+    max_depth: Annotated[
+        int | None,
+        typer.Option(
+            '-d', '--max-depth', help='Maximum tree depth (root is depth 0). Default: unlimited.'
+        ),
+    ] = None,
+    output: Annotated[
+        str | None,
+        typer.Option(
+            '-o',
+            '--output',
+            help='Output file path (extension replaced by --format). '
+            'Default: <tempdir>/tree__<basename>.<format>.',
+        ),
+    ] = None,
+    fmt: Annotated[
+        str,
+        typer.Option(
+            '-f',
+            '--format',
+            help='Output format: "mermaid" for .mmd, or any graphviz format '
+            '(png, svg, pdf, dot, ...). Default: png.',
+        ),
+    ] = 'png',
+    no_view: Annotated[
+        bool,
+        typer.Option('--no-view', help='Do not open the rendered file in the default viewer.'),
+    ] = False,
+    include: Annotated[
+        list[str] | None,
+        typer.Option(
+            '-i',
+            '--include',
+            help='fnmatch pattern to include (files only, matched against basename). '
+            'Repeatable. When set, files not matching any pattern are hidden; '
+            'directories are always shown.',
+        ),
+    ] = None,
+    follow_symlinks: Annotated[
+        bool,
+        typer.Option(
+            '-L',
+            '--follow-symlinks',
+            help='Follow directory symlinks (cycles broken). Default: do not follow.',
+        ),
+    ] = False,
+    stats: Annotated[
+        bool,
+        typer.Option('--stats', help='Print file and directory counts to stderr after rendering.'),
+    ] = False,
+) -> None:
     root = walk(
-        args.path,
-        excludes=_resolve_excludes(args),
-        max_depth=args.max_depth,
-        follow_symlinks=args.follow_symlinks,
+        path,
+        excludes=_resolve_excludes(exclude or [], no_default_excludes),
+        includes=include or [],
+        max_depth=max_depth,
+        follow_symlinks=follow_symlinks,
     )
-    if args.format == 'mermaid':
-        return _run_mermaid(args, root)
+    if stats:
+        files, dirs = _count_tree(root)
+        typer.echo(
+            f'{files} {"file" if files == 1 else "files"}, '
+            f'{dirs} {"directory" if dirs == 1 else "directories"}',
+            err=True,
+        )
+    if fmt == 'json':
+        _run_json(output, root)
+        return
+    if fmt == 'mermaid':
+        _run_mermaid(output, root)
+        return
 
     dot = to_dot(root)
-
-    output_directory, output_filename = _resolve_output(args, root.basename)
+    output_directory, output_filename = _resolve_output(output, root.basename)
     rendered_path = dot.render(
         directory=output_directory,
         filename=output_filename,
-        view=not args.no_view,
+        view=not no_view,
         cleanup=True,
-        format=args.format,
+        format=fmt,
     )
     print(rendered_path)
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    try:
+        app(list(argv) if argv is not None else None)
+    except SystemExit as e:
+        code = e.code
+        if isinstance(code, int):
+            return code
+        return 0
     return 0
 
 

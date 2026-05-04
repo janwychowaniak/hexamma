@@ -1,89 +1,120 @@
 # hexamma
 
-A small command-line utility that renders the current working directory as a
-Graphviz diagram, with files color-coded by category so the shape of a project
-is readable at a glance.
+[![CI](https://github.com/janwychowaniak/hexamma/actions/workflows/ci.yml/badge.svg)](https://github.com/janwychowaniak/hexamma/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/hexamma)](https://pypi.org/project/hexamma/)
+[![Python](https://img.shields.io/pypi/pyversions/hexamma)](https://pypi.org/project/hexamma/)
+[![License](https://img.shields.io/github/license/janwychowaniak/hexamma)](LICENSE)
 
-## What it does
+Render a directory's folder structure as a Graphviz diagram, with files
+color-coded by type so the shape of a project is readable at a glance.
 
-Run from any directory, `hexamma` walks the tree rooted at the current working
-directory and emits a PNG diagram (via Graphviz) where:
+- **Folders** — warm yellow fill
+- **Python sources** — blue rounded boxes with yellow text
+- **Config files** — pale grey note shape
+- **Docs** — tinted note shape
+- **Hidden entries** — dimmed, connected with dotted edges
 
-- folders use the `folder` shape with a warm fill,
-- Python sources (`.py`) are rendered as filled rounded boxes,
-- configs (`.ini`, `.yml`) use a pale "note" shape,
-- docs (`.rst`) use a tinted "note" shape,
-- hidden entries (dotfiles and dotdirs) are dimmed and connected with dotted edges.
+## Sample output
 
-The rendered file is written to the system temp directory as
-`tree__<basename>.png` and opened with the default image viewer.
+Given a typical Python project layout, `hexamma -f mermaid --no-view` produces:
+
+```mermaid
+flowchart TD
+    ROOT(["sample-proj"])
+    README_dot_md["README.md"]
+    pyproject_dot_toml["pyproject.toml"]
+    src(["src"])
+    src__sample_proj(["sample_proj"])
+    src__sample_proj____init___dot_py["__init__.py"]
+    src__sample_proj__core_dot_py["core.py"]
+    tests(["tests"])
+    tests__test_core_dot_py["test_core.py"]
+    ROOT --> README_dot_md
+    ROOT --> pyproject_dot_toml
+    ROOT --> src
+    src --> src__sample_proj
+    src__sample_proj --> src__sample_proj____init___dot_py
+    src__sample_proj --> src__sample_proj__core_dot_py
+    ROOT --> tests
+    tests --> tests__test_core_dot_py
+    classDef folder_cls fill:#ffe79c,stroke:#919191,color:#000000
+    classDef source_cls fill:#4381b3,stroke:#ffffff,color:#ffd343
+    classDef default_file fill:#ffffff,stroke:#919191,color:#000000
+    class ROOT,src,src__sample_proj,tests folder_cls
+    class src__sample_proj____init___dot_py,src__sample_proj__core_dot_py,tests__test_core_dot_py source_cls
+    class README_dot_md,pyproject_dot_toml default_file
+```
+
+The default output is a PNG opened in your system viewer. Pass `-f svg`,
+`-f mermaid`, `-f json`, or any other Graphviz format.
 
 ## Requirements
 
 - Python 3.11+
-- The Graphviz system binary (`dot` must be on `PATH`)
-- The `graphviz` Python package
-
-Install the system binary first. On Debian/Ubuntu:
+- The Graphviz system binary (`dot` must be on `PATH`) — not needed for
+  `-f mermaid` or `-f json`
 
 ```bash
+# Debian / Ubuntu
 sudo apt install graphviz
-```
 
-On macOS:
-
-```bash
+# macOS
 brew install graphviz
 ```
 
 ## Install
 
-This project uses [uv](https://docs.astral.sh/uv/) for environment and
-dependency management:
+### End users
 
 ```bash
-uv sync
+pipx install hexamma        # recommended
+# or
+uv tool install hexamma
 ```
 
-That creates `.venv/` and installs the package in editable mode. Either
-activate the venv or run the CLI through uv:
+### From source (development)
 
 ```bash
-uv run hexamma
-```
-
-To install the script into a tool environment on your `PATH` instead:
-
-```bash
-uv tool install .
+git clone https://github.com/janwychowaniak/hexamma
+cd hexamma
+uv sync                     # creates .venv, installs in editable mode
+uv run hexamma --help
 ```
 
 ## Usage
 
-By default `hexamma` renders the current directory:
-
 ```bash
-hexamma
+hexamma                              # current directory → PNG → open viewer
+hexamma path/to/proj                 # explicit target
+hexamma -d 3                         # cap depth at 3 levels
+hexamma -e '*.log' -e build          # add exclude patterns (repeatable)
+hexamma --no-default-excludes        # show .git, __pycache__, etc.
+hexamma -i '*.py' -i '*.toml'        # show only matched file types
+hexamma -f svg -o ~/diagrams/proj    # SVG to a specific path
+hexamma -f mermaid --no-view         # Mermaid .mmd, skip viewer
+hexamma -f json | jq .               # JSON tree to stdout
+hexamma -f json | jq '[.. | strings]' # extract all paths with jq
+hexamma --no-view                    # skip viewer (CI / SSH)
+hexamma --stats                      # print file + directory counts
+hexamma -L                           # follow directory symlinks
+hexamma --version                    # show installed version
 ```
 
-It accepts a path and a few flags:
+## Output formats
 
-```bash
-hexamma path/to/project                   # render a specific directory
-hexamma -d 3                              # cap depth at 3 levels
-hexamma -e '*.log' -e build               # add exclude patterns
-hexamma --no-default-excludes             # show .git/, __pycache__, etc.
-hexamma -f svg -o ~/diagrams/proj         # write SVG to a chosen path
-hexamma --no-view                         # don't open the viewer
-hexamma -L                                # follow directory symlinks
-```
+| Flag | Output | Notes |
+|---|---|---|
+| *(default)* | PNG | Raster via Graphviz; opened in viewer |
+| `-f svg` | SVG | Vector via Graphviz |
+| `-f pdf` | PDF | Via Graphviz |
+| `-f dot` | DOT source | Raw Graphviz input |
+| `-f mermaid` | `.mmd` file | Mermaid flowchart; no `dot` binary needed |
+| `-f json` | JSON to stdout | Machine-readable tree; pipeable to `jq` |
 
-The full flag list is `hexamma --help`. Output path is printed on stdout.
+## Default excludes
 
-### Default excludes
-
-To keep diagrams readable, the following basenames are excluded by default
-(matched as `fnmatch` globs):
+To keep diagrams readable, these basenames are excluded by default
+(fnmatch globs, matched against basename only):
 
 ```
 .git  .hg  .svn
@@ -93,36 +124,35 @@ node_modules  .next  .nuxt  .svelte-kit  .astro  .turbo
 target  .bsp  .metals  .bloop  .scala-build
 ```
 
-Pass `--no-default-excludes` to disable, or add your own with `-e PATTERN`
-(repeatable).
+Pass `--no-default-excludes` to disable them entirely, or add your own
+patterns with `-e PATTERN` (repeatable, combined with the defaults).
 
 ## Customizing the styling
 
-File categorization and colors live in `src/hexamma/styling.py`:
+Categorization and colors live in `src/hexamma/styling.py`:
 
-- `Category` — enum of styling categories (`FOLDER`, `HIDDEN`, `SOURCE`,
-  `CONFIG`, `DOC`)
-- `SOURCE_EXTS`, `CONFIG_EXTS`, `DOC_EXTS` — extension sets that drive
-  categorization
-- `NODE_PALETTE`, `EDGE_PALETTE` — per-category attribute layers, applied in
-  the order defined by the module-level layer constants (later layers
-  overwrite earlier ones on attr-key collisions)
+- `Category` — enum of styling categories (`FOLDER`, `HIDDEN`, `SOURCE`, `CONFIG`, `DOC`)
+- `SOURCE_EXTS`, `CONFIG_EXTS`, `DOC_EXTS` — extension sets that drive categorization
+- `NODE_PALETTE`, `EDGE_PALETTE` — per-category attribute layers applied in a fixed
+  order (later layers overwrite earlier ones on colliding keys)
 
-To add a new category, add a `Category` member, add an extension set and a
-palette entry, and update `categorize` plus the layer-order tuples.
+To add a new category: add a `Category` member, an extension set, a palette entry,
+update `categorize`, and add the category to the appropriate layer-order tuple.
 
 ## Development
 
-`uv sync` installs the `dev` dependency group by default (`pytest`, `ruff`,
-`mypy`). The usual checks:
-
 ```bash
-uv run pytest
-uv run ruff check
-uv run mypy
+uv sync            # install all deps including dev group
+uv run pytest      # run tests (coverage reported automatically)
+uv run ruff check  # lint
+uv run mypy        # type-check (strict mode)
 ```
 
-`mypy` is configured in strict mode.
+Pre-commit hooks (ruff lint + format) are configured in
+`.pre-commit-config.yaml`. Activate with `pre-commit install`.
+
+CI runs lint, format check, mypy, and pytest with a 90% coverage
+threshold across Python 3.11, 3.12, and 3.13.
 
 ## License
 
