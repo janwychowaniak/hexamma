@@ -80,7 +80,7 @@ module = "graphviz.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["test_cli", "test_mermaid", "test_render", "test_styling", "test_tree"]
+module = ["test_cli", "test_json_output", "test_mermaid", "test_render", "test_styling", "test_tree"]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 disallow_untyped_calls = false

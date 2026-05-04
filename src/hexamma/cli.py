@@ -45,6 +45,20 @@ def _resolve_output(output: str | None, root_basename: str) -> tuple[str, str]:
     return directory, filename
 
 
+def _run_json(output: str | None, root: FsNode) -> None:
+    from hexamma.json_output import to_json
+
+    text = to_json(root)
+    if output is None:
+        print(text)
+        return
+    directory, stem = _resolve_output(output, root.basename)
+    out_path = os.path.join(directory, stem + '.json')
+    with open(out_path, 'w', encoding='utf-8') as f:
+        f.write(text)
+    print(out_path)
+
+
 def _run_mermaid(output: str | None, root: FsNode) -> None:
     from hexamma.mermaid import to_mermaid
 
@@ -130,6 +144,9 @@ def _command(
         max_depth=max_depth,
         follow_symlinks=follow_symlinks,
     )
+    if fmt == 'json':
+        _run_json(output, root)
+        return
     if fmt == 'mermaid':
         _run_mermaid(output, root)
         return

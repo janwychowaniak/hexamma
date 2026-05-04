@@ -1,4 +1,5 @@
 import importlib.metadata
+import json
 
 from typer.testing import CliRunner
 
@@ -79,6 +80,28 @@ def test_exclude_is_repeatable(tmp_path):
          '--no-default-excludes', '-o', str(out), str(tmp_path)],
     )
     assert result.exit_code == 0
+
+
+# --- json format -------------------------------------------------------------
+
+
+def test_json_format_prints_to_stdout(tmp_path):
+    (tmp_path / 'a.py').write_text('')
+    result = runner.invoke(app, ['--format', 'json', '--no-default-excludes', str(tmp_path)])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data['is_dir'] is True
+    assert any(c['name'] == 'a.py' for c in data['children'])
+
+
+def test_json_format_writes_file_when_output_given(tmp_path):
+    (tmp_path / 'a.py').write_text('')
+    out = tmp_path / 'tree'
+    result = runner.invoke(
+        app, ['--format', 'json', '--no-default-excludes', '-o', str(out), str(tmp_path)]
+    )
+    assert result.exit_code == 0
+    assert (tmp_path / 'tree.json').exists()
 
 
 # --- mermaid integration -----------------------------------------------------
