@@ -116,7 +116,8 @@ def _children(
     visited.add(real)
 
     entries = sorted(
-        entry for entry in os.listdir(abs_path)
+        entry
+        for entry in os.listdir(abs_path)
         if not _is_excluded(entry, excludes)
         and _is_included(entry, includes, os.path.isdir(os.path.join(abs_path, entry)))
     )

@@ -79,7 +79,7 @@ def test_count_tree_nested():
     root = FsNode(basename='proj', relpath='', is_dir=True, children=(readme, src))
     files, dirs = _count_tree(root)
     assert files == 2  # README.md + main.py
-    assert dirs == 1   # src
+    assert dirs == 1  # src
 
 
 def test_count_tree_singular_labels(tmp_path):
@@ -131,8 +131,20 @@ def test_exclude_is_repeatable(tmp_path):
     out = tmp_path / 'out'
     result = runner.invoke(
         app,
-        ['-e', 'a', '--exclude', 'b', '-e', 'c', '--format', 'mermaid',
-         '--no-default-excludes', '-o', str(out), str(tmp_path)],
+        [
+            '-e',
+            'a',
+            '--exclude',
+            'b',
+            '-e',
+            'c',
+            '--format',
+            'mermaid',
+            '--no-default-excludes',
+            '-o',
+            str(out),
+            str(tmp_path),
+        ],
     )
     assert result.exit_code == 0
 
