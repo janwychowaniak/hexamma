@@ -82,3 +82,11 @@ Three things to know to make non-trivial changes:
 2. **Styling is layered, last-write-wins.** `categorize(is_folder, basename)` returns a `frozenset[Category]`. `node_attrs` / `edge_attrs` apply per-category palette layers in a fixed order (`_NODE_LAYER_ORDER` / `_EDGE_LAYER_ORDER` in `styling.py`); later layers overwrite earlier ones on attr-key collisions. Adding a category means: add a `Category` member, an extension set, a `NODE_PALETTE` / `EDGE_PALETTE` entry, a clause in `categorize`, and the appropriate position in the layer-order tuples.
 
 3. **Excludes and includes are basename-only fnmatch globs and never apply to the root.** `walk()` filters children before recursing, so an exclude pattern that matches a directory name short-circuits the entire subtree. Includes work the inverse way for *files only* — directories always pass the include filter so that a pattern like `*.py` still descends into subdirectories. The root is never filtered. CLI users get `DEFAULT_EXCLUDES` (`.git`, `__pycache__`, `*.egg-info`, `node_modules`, etc.) merged in unless they pass `--no-default-excludes`.
+
+## Releases
+
+Publishing to PyPI is automated via `.github/workflows/publish.yml` using OIDC
+trusted publishing (no stored tokens). To cut a release: bump `version` in
+`pyproject.toml`, commit, then `git tag vX.Y.Z && git push origin vX.Y.Z` —
+the tag push triggers `uv build` + `uv publish` against the `pypi` GitHub
+environment.

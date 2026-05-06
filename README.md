@@ -67,9 +67,9 @@ brew install graphviz
 ### End users
 
 ```bash
-pipx install hexamma        # recommended
-# or
-uv tool install hexamma
+uvx hexamma path/to/proj    # one-shot, no install
+pipx install hexamma        # recommended for repeat use
+uv tool install hexamma     # if you already use uv
 ```
 
 ### From source (development)
